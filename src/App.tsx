@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-  CheckCircle2, 
-  Circle, 
-  Send, 
-  Calendar, 
-  Info, 
+import {
+  CheckCircle2,
+  Circle,
+  Send,
+  Calendar,
+  Info,
   ChevronRight,
   ShieldCheck,
   Flag,
@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
+import rehypeSanitize from 'rehype-sanitize';
 import { cn } from './lib/utils';
 import { askElectionAssistant } from './services/gemini';
 
@@ -68,7 +69,7 @@ export default function App() {
         role: m.role,
         parts: [{ text: m.content }]
       }));
-      
+
       const response = await askElectionAssistant(userMessage, history);
       setMessages(prev => [...prev, { role: 'model', content: response || "I'm sorry, I couldn't process that request." }]);
     } catch (error) {
@@ -80,7 +81,7 @@ export default function App() {
   };
 
   const toggleChecklist = (id: string) => {
-    setChecklist(prev => prev.map(item => 
+    setChecklist(prev => prev.map(item =>
       item.id === id ? { ...item, completed: !item.completed } : item
     ));
   };
@@ -96,8 +97,11 @@ export default function App() {
     <div className="flex h-screen w-full bg-slate-50 font-sans text-slate-900 overflow-hidden">
       {/* Mobile Toggle */}
       {!isSidebarOpen && (
-        <button 
+        <button
           onClick={() => setIsSidebarOpen(true)}
+          aria-label="Open sidebar"
+          aria-expanded="false"
+          aria-controls="sidebar"
           className="fixed top-4 left-4 z-50 md:hidden p-2 bg-white rounded-full shadow-md border border-slate-200 text-slate-600"
         >
           <Menu size={20} />
@@ -108,6 +112,8 @@ export default function App() {
       <AnimatePresence>
         {isSidebarOpen && (
           <motion.aside
+            id="sidebar"
+            aria-label="Sidebar"
             initial={{ x: -320 }}
             animate={{ x: 0 }}
             exit={{ x: -320 }}
@@ -121,7 +127,7 @@ export default function App() {
                   </div>
                   <h1 className="font-bold text-xl tracking-tight text-slate-900">VoteGuide AI</h1>
                 </div>
-                <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-slate-400">
+                <button onClick={() => setIsSidebarOpen(false)} aria-label="Close sidebar" aria-expanded="true" aria-controls="sidebar" className="md:hidden text-slate-400">
                   <X size={20} />
                 </button>
               </div>
@@ -133,10 +139,11 @@ export default function App() {
                     <button
                       key={item.id}
                       onClick={() => toggleChecklist(item.id)}
+                      aria-label={item.completed ? `Mark ${item.label} as incomplete` : `Mark ${item.label} as complete`}
                       className={cn(
                         "flex items-center gap-3 w-full p-3 rounded-xl border transition-all group",
-                        item.completed 
-                          ? "bg-slate-50 border-slate-100 opacity-60" 
+                        item.completed
+                          ? "bg-slate-50 border-slate-100 opacity-60"
                           : "bg-white border-transparent hover:bg-slate-50 hover:border-slate-100"
                       )}
                     >
@@ -166,11 +173,11 @@ export default function App() {
                     <div className="text-xl font-black text-indigo-900">Nov 3, 2026</div>
                     <div className="text-[10px] text-indigo-600 mt-2 font-semibold">MIDTERM ELECTIONS</div>
                   </div>
-                  
+
                   <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100/50">
                     <div className="text-[10px] font-bold text-emerald-700 mb-1 uppercase tracking-wider">STATUS</div>
                     <div className="text-sm font-bold text-emerald-900 flex items-center gap-2">
-                       <ShieldCheck size={14} /> Ready to Assist
+                      <ShieldCheck size={14} /> Ready to Assist
                     </div>
                   </div>
                 </div>
@@ -181,8 +188,8 @@ export default function App() {
               <div className="p-4 bg-slate-900 rounded-2xl text-white flex items-start gap-3">
                 <Info size={18} className="text-indigo-400 shrink-0 mt-0.5" />
                 <p className="text-xs text-slate-300 leading-relaxed font-medium">
-                  Official data from <br/> 
-                  <a href="https://vote.gov" target="_blank" className="text-white underline font-bold hover:text-indigo-300 transition-colors">vote.gov</a>
+                  Official data from <br />
+                  <a href="https://vote.gov" target="_blank" rel="noopener noreferrer" className="text-white underline font-bold hover:text-indigo-300 transition-colors">vote.gov</a>
                 </p>
               </div>
             </div>
@@ -201,7 +208,7 @@ export default function App() {
             </span>
           </div>
           <div className="flex items-center gap-4">
-            <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors">
+            <button aria-label="More options" className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors">
               <MoreVertical size={20} />
             </button>
           </div>
@@ -209,7 +216,7 @@ export default function App() {
 
         {/* Chat Area */}
         <div className="flex-1 overflow-y-auto px-6 py-10 scrollbar-hide">
-          <div className="max-w-3xl mx-auto space-y-8">
+          <div className="max-w-3xl mx-auto space-y-8" role="log" aria-live="polite" aria-atomic="false">
             <div className="flex justify-center mb-8">
               <p className="text-[10px] font-bold text-slate-400 bg-slate-200/50 px-4 py-1 rounded-full uppercase tracking-widest">Election Assistant Console</p>
             </div>
@@ -226,28 +233,28 @@ export default function App() {
               >
                 <div className={cn(
                   "w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm transition-transform hover:scale-105",
-                  message.role === 'user' 
-                    ? "bg-slate-900 text-white font-bold text-[10px]" 
+                  message.role === 'user'
+                    ? "bg-slate-900 text-white font-bold text-[10px]"
                     : "bg-indigo-100 text-indigo-600"
                 )}>
                   {message.role === 'user' ? "ME" : <Zap size={14} fill="currentColor" />}
                 </div>
                 <div className={cn(
                   "max-w-[85%] px-5 py-4 shadow-sm border leading-relaxed",
-                  message.role === 'user' 
-                    ? "bg-indigo-600 border-indigo-700 text-white rounded-2xl rounded-tr-none" 
+                  message.role === 'user'
+                    ? "bg-indigo-600 border-indigo-700 text-white rounded-2xl rounded-tr-none"
                     : "bg-white border-slate-100 text-slate-800 rounded-2xl rounded-tl-none"
                 )}>
                   <div className={cn(
                     "prose prose-sm max-w-none text-sm",
                     message.role === 'user' ? "prose-p:text-white" : "prose-p:text-slate-600"
                   )}>
-                    <ReactMarkdown>{message.content}</ReactMarkdown>
+                    <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{message.content}</ReactMarkdown>
                   </div>
                 </div>
               </motion.div>
             ))}
-            
+
             {isLoading && (
               <div className="flex gap-4">
                 <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center">
@@ -289,15 +296,17 @@ export default function App() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                 placeholder="Ask about registration, deadlines, or requirements..."
+                aria-label="Chat input message"
                 className="flex-1 bg-transparent border-none focus:ring-0 text-sm py-3 text-slate-800 placeholder:text-slate-400"
               />
               <button
                 onClick={handleSendMessage}
                 disabled={!input.trim() || isLoading}
+                aria-label="Send message"
                 className={cn(
                   "w-10 h-10 rounded-lg flex items-center justify-center transition-all shadow-md",
-                  input.trim() 
-                    ? "bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95 shadow-indigo-100" 
+                  input.trim()
+                    ? "bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95 shadow-indigo-100"
                     : "bg-slate-200 text-slate-400 cursor-not-allowed"
                 )}
               >
