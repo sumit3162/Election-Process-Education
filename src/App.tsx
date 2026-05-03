@@ -139,6 +139,8 @@ export default function App() {
                     <button
                       key={item.id}
                       onClick={() => toggleChecklist(item.id)}
+                      role="checkbox"
+                      aria-checked={item.completed}
                       aria-label={item.completed ? `Mark ${item.label} as incomplete` : `Mark ${item.label} as complete`}
                       className={cn(
                         "flex items-center gap-3 w-full p-3 rounded-xl border transition-all group",
@@ -148,9 +150,9 @@ export default function App() {
                       )}
                     >
                       {item.completed ? (
-                        <CheckCircle2 size={18} className="text-indigo-600" />
+                        <CheckCircle2 size={18} className="text-indigo-600" aria-hidden="true" />
                       ) : (
-                        <Circle size={18} className="text-slate-300 group-hover:text-indigo-400" />
+                        <Circle size={18} className="text-slate-300 group-hover:text-indigo-400" aria-hidden="true" />
                       )}
                       <span className={cn(
                         "text-sm font-medium transition-all",
